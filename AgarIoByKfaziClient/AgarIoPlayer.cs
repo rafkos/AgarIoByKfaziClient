@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using System.Threading;
+using System.Net.Sockets;
 using AgarIoByKfaziClient.Contract;
 
 namespace AgarIoByKfaziClient
@@ -21,29 +21,38 @@ namespace AgarIoByKfaziClient
             var random = new Random();
             while (true)
             {
-                var getViewResponseDto = _serverGateway.GetView();
-                if (getViewResponseDto.ErrorCode == CommandErrorCode.NotJoined)
+                GetViewResponseDto getViewResponseDto;
+                try
                 {
-                    _serverGateway.JoinPlayer();
+                    getViewResponseDto = _serverGateway.GetView();
+                }
+                catch (SocketException e)
+                {
+                    Console.WriteLine("Could not connet to server! Message: {0}", e.Message);
                     continue;
                 }
 
-                var myBlob = getViewResponseDto.Blobs.FirstOrDefault(x => x.Name == _playerName);
+                switch (getViewResponseDto.ErrorCode)
+                {
+                    case CommandErrorCode.NotJoined:
+                        _serverGateway.JoinPlayer();
+                        continue;
+                    case CommandErrorCode.GameNotStarted:
+                        continue;
+                }
+
+                var foods = getViewResponseDto.Blobs.Where(x => x.Type == BlobType.Food);
+                var players = getViewResponseDto.Blobs.Where(x => x.Type == BlobType.Food).OrderBy(b => b.Id);
+                var viruses = getViewResponseDto.Blobs.Where(x => x.Type == BlobType.Virus);
+                var myBlobs = getViewResponseDto.Blobs.Where(x => x.Type == BlobType.Player).Where(x => x.Name == _playerName);
 
                 double destinationX = random.Next(-255, 256);
                 double destinationY = random.Next(-255, 256);
-                
-                var closestFood = getViewResponseDto.Blobs.Where(x => x.Type == BlobType.Food).OrderBy(
-                        x => Math.Sqrt(Math.Pow(x.Position.X - myBlob.Position.X, 2) + Math.Pow(x.Position.Y - myBlob.Position.Y, 2)))
-                        .FirstOrDefault();
+                double speed = 1000;
 
-                if (closestFood != null)
-                {
-                    destinationX = closestFood.Position.X - myBlob.Position.X;
-                    destinationY = closestFood.Position.Y - myBlob.Position.Y;
-                }
-                
-                _serverGateway.Move(destinationX * 1000, destinationY * 1000);
+                _serverGateway.Move(destinationX * speed, destinationY * speed);
+                //_serverGateway.SplitMass();
+                //_serverGateway.EjectMass();
             }
         }
     }

@@ -18,6 +18,13 @@ namespace AgarIoByKfaziClient
             var hostname = ConfigurationManager.AppSettings["hostname"];
             var port = int.Parse(ConfigurationManager.AppSettings["port"]);
 
+            StartGame(playerName, password, hostname, port);
+
+            Console.ReadLine();
+        }
+
+        private static void StartGame(string playerName, string password, string hostname, int port)
+        {
             if (string.IsNullOrWhiteSpace(playerName + password))
             {
                 throw new ConfigurationErrorsException("PlayerName and password must be set in App.config to connect to server.");

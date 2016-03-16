@@ -35,12 +35,23 @@ namespace AgarIoByKfaziClient
             Command(new MovePlayerCommandDto { Dx = destinationX, Dy = destinationY});
         }
 
-        private T Command<T>(object dto)
+        public void SplitMass()
+        {
+            Command(new SplitPlayerCommandDto());
+        }
+
+        public void EjectMass()
+        {
+            Command(new EjectMassPlayerCommandDto());
+        }
+
+        public T Command<T>(object dto)
         {
             var responseJson = Command(dto);
             return responseJson.FromJson<T>();
         }
-        private string Command(object dto)
+
+        public string Command(object dto)
         {
             var commandJson = dto.ToJson();
             _writer.WriteLine(commandJson);
